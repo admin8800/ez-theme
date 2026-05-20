@@ -147,7 +147,9 @@ export function getTelegramBotInfo() {
 
         url: '/user/telegram/getBotInfo',
 
-        method: 'get'
+        method: 'get',
+
+        timeout: 5000
 
     });
 

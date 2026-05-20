@@ -380,7 +380,7 @@
 
         <!-- Telegram通信 -->
 
-        <div class="profile-card" v-if="(telegramConfig?.telegram_discuss_link || (telegramBotInfo && telegramBotInfo.username)) && !loadingTelegram">
+        <div class="profile-card" v-if="telegramEnabled && (telegramConfig?.telegram_discuss_link || (telegramBotInfo && telegramBotInfo.username)) && !loadingTelegram">
 
           <div class="card-header">
 
@@ -410,7 +410,7 @@
 
             <div class="action-buttons">
 
-              <button class="action-btn" @click="openTelegramGroup" v-if="telegramConfig?.telegram_discuss_link">
+              <button class="action-btn" @click="openTelegramGroup" v-if="telegramEnabled && telegramConfig?.telegram_discuss_link">
 
                 <IconBrandTelegram :size="18" />
 
@@ -420,7 +420,7 @@
 
 
 
-              <button class="action-btn" @click="openTelegramBotModal" v-if="telegramBotInfo && telegramBotInfo.username">
+              <button class="action-btn" @click="openTelegramBotModal" v-if="telegramEnabled && telegramBotInfo && telegramBotInfo.username">
 
                 <IconBrandTelegram :size="18" />
 
@@ -985,6 +985,13 @@ const telegramError = ref('');
 
 const showTelegramBotModal = ref(false);
 
+const isTelegramEnabled = (config) => {
+  const value = config?.is_telegram;
+  return value === true || value === 1 || value === '1';
+};
+
+const telegramEnabled = computed(() => isTelegramEnabled(telegramConfig.value));
+
 
 
 const activeSessions = ref([]);
@@ -1201,6 +1208,8 @@ const fetchTelegramInfo = async () => {
 
   telegramError.value = '';
 
+  telegramBotInfo.value = null;
+
 
 
   try {
@@ -1210,6 +1219,12 @@ const fetchTelegramInfo = async () => {
     if (configResponse && configResponse.data) {
 
       telegramConfig.value = configResponse.data;
+
+    }
+
+    if (!isTelegramEnabled(telegramConfig.value)) {
+
+      return;
 
     }
 
@@ -1252,12 +1267,6 @@ const fetchTelegramInfo = async () => {
   } finally {
 
     loadingTelegram.value = false;
-
-    if (!loading.value && !loadingSessions.value) {
-
-      loading.value = false;
-
-    }
 
   }
 
@@ -1677,13 +1686,13 @@ onMounted(() => {
 
     PROFILE_CONFIG.showRecentDevices ? fetchActiveSessions() : Promise.resolve(),
 
-    fetchTelegramInfo()
-
   ]).finally(() => {
 
     loading.value = false;
 
     checkOpenPasswordModal();
+
+    fetchTelegramInfo();
 
   });
 
@@ -3802,4 +3811,3 @@ body.dark-theme {
 }
 
 </style>
-
