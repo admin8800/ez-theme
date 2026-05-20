@@ -1,8 +1,7 @@
-﻿<template>
+<template>
 
   <div class="docs-container">
 
-    <!-- 域名授权验证提示 - 如果不需要域名授权功能，移除此组件即可 -->
 
 
     

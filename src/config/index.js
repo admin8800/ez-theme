@@ -14,53 +14,19 @@ export const config  = {
 
     // =======================================================
 
-    // API配置
-    // 可使用以下选项来配置API基础URL:
-    // 1. 静态URL: 直接指定API基础URL 末尾要加 /api/v1 !!!!!!!!!!!!!!! 除非你自己改过路由要不然别不加
-    // 2. 自动获取: 从当前域名自动生成API基础URL
+    // API configuration
     API_CONFIG: {
-        // API URL获取方式: 'static'=使用静态URL, 'auto'=自动从当前域名获取
         urlMode: 'static',
-      
-        // 是否展示后端联通性检测
         showCheckBackend: false,
-      
-        // 静态URL模式下的基础URL (urlMode = 'static'时使用)
-        // 支持字符串形式(单个API地址)或数组形式(多个备选API地址)
-        // 多个地址时，会按顺序检测可用性，并使用第一个可用的地址
         staticBaseUrl: [
-            'https://example.com/api/v1'
+            'http://172.24.95.125:7001/api/v1'
         ],
-      
-        // 自动获取模式配置 (urlMode = 'auto'时使用)
         autoConfig: {
-            // 是否使用相同协议 (http/https)
             useSameProtocol: true,
-
-            // 是否拼接API路径
             appendApiPath: true,
-
-            // API路径
             apiPath: '/api/v1'
         }
     },
-
-    // 是否启用中间件代理API请求
-    // 设置为true时，所有API请求将通过中间件转发
-    API_MIDDLEWARE_ENABLED: false,
-  
-    //=======================================================
-    // 中间件服务器URL (不含路径) 开源地址 https://github.com/codeman857/EZ-Encrypt-Middleware
-    API_MIDDLEWARE_URL: 'https://example.com',
-  
-    // 中间件加密KEY必须是16位的16进制字符串，必须和中间件key保持一致 在线生成地址 https://www.bejson.com/math/hex_gen/
-    API_MIDDLEWARE_KEY: '4c6f8e5f9467dc71',
-    //=======================================================
-
-    // 中间件路由前缀 (与中间件服务器配置保持一致)
-    API_MIDDLEWARE_PATH: '/ez/ez',
-
-    //=======================================================
 
     // ====================  网站基础配置  ====================
     SITE_CONFIG: {
@@ -341,17 +307,6 @@ export const config  = {
 
     // =======================================================
 
-    // 安全配置 (仅包含前端域名授权开关，有利于保护您的主题不被别人窃取)
-    SECURITY_CONFIG: {
-        // 是否启用前端域名验证（前端域名检查，防止未授权域名访问）
-        enableFrontendDomainCheck: false
-    },
-
-    // 授权的前端域名列表 (新增)
-    AUTHORIZED_DOMAINS: [
-        "test.example.com",
-        "test1.example.com",
-    ],
 
     // 验证码配置
     CAPTCHA_CONFIG: {

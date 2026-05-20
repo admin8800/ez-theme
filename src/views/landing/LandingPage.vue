@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="landing-page" :class="{ 'dark-theme': isDarkTheme }" @wheel="handleWheel" @scroll="handleScroll" ref="landingPageRef">
 
@@ -95,7 +95,6 @@ import LanguageSelector from '@/components/common/LanguageSelector.vue';
 
 import { IconChevronDown } from '@tabler/icons-vue';
 
-import DomainAuthAlert from '@/components/common/DomainAuthAlert.vue';
 
 
 
@@ -111,7 +110,6 @@ export default {
 
     IconChevronDown,
 
-    DomainAuthAlert
 
   },
 

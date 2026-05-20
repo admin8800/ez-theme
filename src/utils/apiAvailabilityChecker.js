@@ -1,8 +1,6 @@
 function shouldCheckApiAvailability() {
   if (typeof window === 'undefined' || !window.EZ_CONFIG) return false;
-  
-  if (window.EZ_CONFIG.API_MIDDLEWARE_ENABLED === true) return false;
-  
+
   const apiConfig = window.EZ_CONFIG.API_CONFIG;
   if (!apiConfig || apiConfig.urlMode !== 'static') return false;
   

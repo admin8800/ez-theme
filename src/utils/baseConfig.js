@@ -50,82 +50,45 @@ export const isXboard = () => {
     return PANEL_TYPE === 'Xboard';
 };
 
-// 获取API基础URL的函数
 export const getApiBaseUrl = () => {
-    // 完全依赖config.js中的配置
-    if (typeof window !== 'undefined' && window.EZ_CONFIG) {
-        // 首先检查是否启用中间件代理
-        if (window.EZ_CONFIG.API_MIDDLEWARE_ENABLED === true && window.EZ_CONFIG.API_MIDDLEWARE_URL) {
-            // 使用中间件URL和路径
-            const middlewareUrl = window.EZ_CONFIG.API_MIDDLEWARE_URL.trim();
-            const middlewarePath = window.EZ_CONFIG.API_MIDDLEWARE_PATH;
+    if (typeof window !== 'undefined' && window.EZ_CONFIG?.API_CONFIG) {
+        const apiConfig = window.EZ_CONFIG.API_CONFIG;
 
-            // 确保URL末尾没有斜杠，且路径开头有斜杠，防止出现重复或缺少斜杠
-            const formattedUrl = middlewareUrl.endsWith('/') ? middlewareUrl.slice(0, -1) : middlewareUrl;
-            const formattedPath = middlewarePath.startsWith('/') ? middlewarePath : `/${middlewarePath}`;
-
-            const middlewareKey = window.EZ_CONFIG.API_MIDDLEWARE_KEY;
-            
-            if(middlewareKey) {
-              return formattedUrl;
+        if (apiConfig.urlMode === 'static' && apiConfig.staticBaseUrl) {
+            if (Array.isArray(apiConfig.staticBaseUrl) && apiConfig.staticBaseUrl.length > 1) {
+                return getAvailableApiUrl() || apiConfig.staticBaseUrl[0];
             }
-            return formattedUrl + formattedPath;
+
+            if (Array.isArray(apiConfig.staticBaseUrl) && apiConfig.staticBaseUrl.length === 1) {
+                return apiConfig.staticBaseUrl[0];
+            }
+
+            if (typeof apiConfig.staticBaseUrl === 'string') {
+                return apiConfig.staticBaseUrl;
+            }
+
+            return '';
         }
 
-        // 然后检查是否存在API_CONFIG
-        if (window.EZ_CONFIG.API_CONFIG) {
-            const apiConfig = window.EZ_CONFIG.API_CONFIG;
+        if (apiConfig.urlMode === 'auto' && apiConfig.autoConfig) {
+            try {
+                const currentUrl = new URL(window.location.href);
+                const protocol = apiConfig.autoConfig.useSameProtocol
+                    ? currentUrl.protocol
+                    : 'https:';
+                let apiBaseUrl = `${protocol}//${currentUrl.host}`;
 
-            // 静态URL模式
-            if (apiConfig.urlMode === 'static' && apiConfig.staticBaseUrl) {
-                // 检查是否有经过API可用性检测的URL
-                if (Array.isArray(apiConfig.staticBaseUrl) && apiConfig.staticBaseUrl.length > 1) {
-                    // 使用API可用性检测器获取可用的URL
-                    const availableUrl = getAvailableApiUrl();
-                    if (availableUrl) {
-                        return availableUrl;
-                    }
-                    // 如果没有可用URL，返回数组中的第一个URL
-                    return apiConfig.staticBaseUrl[0];
+                if (apiConfig.autoConfig.appendApiPath && apiConfig.autoConfig.apiPath) {
+                    apiBaseUrl += apiConfig.autoConfig.apiPath;
                 }
-                // 如果staticBaseUrl是数组但只有一个元素，返回该元素
-                else if (Array.isArray(apiConfig.staticBaseUrl) && apiConfig.staticBaseUrl.length === 1) {
-                    return apiConfig.staticBaseUrl[0];
-                }
-                // 如果staticBaseUrl是字符串，直接返回
-                else if (typeof apiConfig.staticBaseUrl === 'string') {
-                    return apiConfig.staticBaseUrl;
-                }
-                // 如果staticBaseUrl不是字符串也不是数组，返回空字符串
-                return '';
-            }
 
-            // 自动获取模式
-            if (apiConfig.urlMode === 'auto' && apiConfig.autoConfig) {
-                try {
-                    const currentUrl = new URL(window.location.href);
-                    let apiBaseUrl = '';
-
-                    // 协议
-                    const protocol = apiConfig.autoConfig.useSameProtocol
-                        ? currentUrl.protocol
-                        : 'https:';
-
-                    // 域名
-                    apiBaseUrl = `${protocol}//${currentUrl.host}`;
-
-                    // API路径
-                    if (apiConfig.autoConfig.appendApiPath && apiConfig.autoConfig.apiPath) {
-                        apiBaseUrl += apiConfig.autoConfig.apiPath;
-                    }
-
-                    return apiBaseUrl;
-                } catch (error) {
-                    console.error('自动获取API URL失败:', error);
-                    // 仅在自动模式失败时回退到静态URL
-                    if (apiConfig.staticBaseUrl) {
-                        return apiConfig.staticBaseUrl;
-                    }
+                return apiBaseUrl;
+            } catch (error) {
+                console.error('获取 API URL 失败:', error);
+                if (apiConfig.staticBaseUrl) {
+                    return Array.isArray(apiConfig.staticBaseUrl)
+                        ? apiConfig.staticBaseUrl[0]
+                        : apiConfig.staticBaseUrl;
                 }
             }
         }
@@ -137,27 +100,6 @@ export const getApiBaseUrl = () => {
 // 直接导出API基础URL
 export const API_BASE_URL = getApiBaseUrl();
 
-/**
- * 安全配置选项
- * 可以通过这些选项轻松启用或禁用各种安全功能
- */
-const DEFAULT_SECURITY_CONFIG = {
-    // 是否启用前端域名验证（前端域名检查，防止未授权域名访问）
-    enableFrontendDomainCheck: false,
-
-    // 是否启用授权码验证
-    enableLicenseCheck: true,
-};
-
-export const SECURITY_CONFIG = mergeDeep(DEFAULT_SECURITY_CONFIG, getConfig('SECURITY_CONFIG'));
-
-// 授权的前端域名列表
-const DEFAULT_AUTHORIZED_DOMAINS = [
-    'panghu.com',
-    // 在此处添加您授权的其他域名
-];
-
-export const AUTHORIZED_DOMAINS = getConfig('AUTHORIZED_DOMAINS', DEFAULT_AUTHORIZED_DOMAINS);
 
 /**
  * 验证码配置

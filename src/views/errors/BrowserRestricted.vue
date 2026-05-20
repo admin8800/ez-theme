@@ -1,8 +1,7 @@
-﻿<template>
+<template>
 
   <div class="browser-restricted-container">
 
-    <!-- 域名授权验证提示 -->
 
 
     
@@ -169,7 +168,6 @@ import { useI18n } from 'vue-i18n';
 
 
 
-import DomainAuthAlert from '@/components/common/DomainAuthAlert.vue';
 
 import { 
 
@@ -219,7 +217,6 @@ export default {
 
     IconCopy,
 
-    DomainAuthAlert
 
   },
 

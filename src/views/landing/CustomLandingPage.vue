@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 
   <div class="custom-landing-container">
 
@@ -78,7 +78,6 @@ import { SITE_CONFIG, THEME_CONFIG, DEFAULT_CONFIG } from '@/utils/baseConfig';
 
 import { useTheme } from '@/composables/useTheme';
 
-import DomainAuthAlert from '@/components/common/DomainAuthAlert.vue';
 
 import LandingPage from './LandingPage.vue';
 
@@ -90,7 +89,6 @@ export default {
 
   components: {
 
-    DomainAuthAlert,
 
     LandingPage
 

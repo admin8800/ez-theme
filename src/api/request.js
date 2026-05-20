@@ -1,25 +1,15 @@
 ﻿
 import axios from 'axios';
 import { API_BASE_URL, getApiBaseUrl, isXiaoV2board, isXboard, CUSTOM_HEADERS_CONFIG } from '@/utils/baseConfig';
-import { mapApiPath } from './utils/pathMapper';
-import { getAvailableApiUrl } from '@/utils/apiAvailabilityChecker';
-import { getEncrypUrl, randomIv } from "@/api/utils/encryption";
 import { readAuthData } from '@/api/client/authToken';
 import { applyCustomHeaders } from '@/api/client/headers';
 import { normalizeRequestError } from '@/api/client/errors';
-
-const isEncrypted = window.EZ_CONFIG &&
-  window.EZ_CONFIG.API_MIDDLEWARE_ENABLED &&
-  window.EZ_CONFIG.API_MIDDLEWARE_KEY &&
-  window.EZ_CONFIG.API_MIDDLEWARE_KEY !== '';
 
 const request = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
-    // 只有在加密模式下才添加 X-IV 头
-    ...(isEncrypted && { 'X-IV': randomIv() }),
+    'Content-Type': 'application/json'
   }
 });
 
@@ -51,27 +41,7 @@ const clearExpiredAuthState = () => {
 
 request.interceptors.request.use(
   async config => {
-      config.baseURL = getApiBaseUrl();
-    
-    if (window.EZ_CONFIG && window.EZ_CONFIG.API_MIDDLEWARE_ENABLED) {
-      const originalUrl = config.url;
-      
-      const path = originalUrl.startsWith("http") ? mapApiPath(config.url) : `${window.EZ_CONFIG.API_MIDDLEWARE_PATH}/${btoa(getEncrypUrl(config.url))}`
-      
-      config.url = isEncrypted ? path : mapApiPath(config.url);
-      
-      if (import.meta.env.DEV) {
-        console.log(`API路径映射: ${originalUrl} -> ${config.url}`);
-      }
-    }
-    else if (window.EZ_CONFIG && window.EZ_CONFIG.API_BASE_URLS &&
-             Array.isArray(window.EZ_CONFIG.API_BASE_URLS) &&
-             window.EZ_CONFIG.API_BASE_URLS.length > 1) {
-      const availableApiUrl = getAvailableApiUrl();
-      if (availableApiUrl) {
-        config.baseURL = availableApiUrl;
-      }
-    }
+    config.baseURL = getApiBaseUrl();
     
     if ((isXiaoV2board() || isXboard()) && config.method === 'post' && config.data) {
       const formData = new URLSearchParams();

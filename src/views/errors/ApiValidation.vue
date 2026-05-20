@@ -168,16 +168,6 @@ export default {
 
       
 
-      if (window.EZ_CONFIG.API_MIDDLEWARE_ENABLED === true) {
-
-        navigateToTarget();
-
-        return;
-
-      }
-
-      
-
       const apiConfig = window.EZ_CONFIG.API_CONFIG;
 
       if (!apiConfig || apiConfig.urlMode !== 'static') {

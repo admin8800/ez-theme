@@ -1,10 +1,9 @@
-﻿<template>
+<template>
 
   <div class="register-view-container">
 
     <div class="auth-split-container">
 
-      <!-- 域名授权验证提示 -->
 
 
 
@@ -613,7 +612,6 @@ import { register, checkLoginStatus, getWebsiteConfig, sendEmailVerify } from '@
 
 
 
-import DomainAuthAlert from '@/components/common/DomainAuthAlert.vue';
 
 import { CAPTCHA_CONFIG, AUTH_LAYOUT_CONFIG, SITE_CONFIG, AUTH_CONFIG } from '@/utils/baseConfig';
 
@@ -709,7 +707,6 @@ export default {
 
     IconChevronDown,
 
-    DomainAuthAlert,
 
     AuthPopup
 
