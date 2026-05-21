@@ -815,16 +815,10 @@ export default {
       pendingAction.value = null;
     };
     
-    const shareToWechat = () => {
-      if (!inviteLink.value) {
-        showToast(t('invite.share.noLinkAvailable'), 'error');
-        return;
-      }
-      
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink.value)}`;
-      
-      const win = window.open('', '_blank', 'width=600,height=400');
+    const writeQrShareWindow = (win, qrCodeUrl) => {
+      win.document.open();
       win.document.write(`
+        <!doctype html>
         <html>
           <head>
             <title>${t('invite.share.scanTitle')}</title>
@@ -832,7 +826,7 @@ export default {
               body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
               img { max-width: 100%; height: auto; margin-bottom: 20px; }
               h2 { color: #333; }
-              p { color: #666; }
+              p { color: #666; word-break: break-all; }
             </style>
           </head>
           <body>
@@ -842,6 +836,33 @@ export default {
           </body>
         </html>
       `);
+      win.document.close();
+    };
+
+    const shareToWechat = async () => {
+      if (!inviteLink.value) {
+        showToast(t('invite.share.noLinkAvailable'), 'error');
+        return;
+      }
+
+      const win = window.open('', '_blank', 'width=600,height=400');
+      if (!win) {
+        showToast(t('common.error'), 'error');
+        return;
+      }
+
+      try {
+        const QRCode = (await import('qrcode')).default;
+        const qrCodeUrl = await QRCode.toDataURL(inviteLink.value, {
+          width: 200,
+          margin: 2,
+          errorCorrectionLevel: 'M'
+        });
+        writeQrShareWindow(win, qrCodeUrl);
+      } catch (error) {
+        win.close();
+        handleError(error);
+      }
     };
     
     const shareToTwitter = () => {
@@ -4019,5 +4040,4 @@ export default {
   }
 }
 </style> 
-
 
