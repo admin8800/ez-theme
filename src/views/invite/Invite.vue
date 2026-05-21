@@ -355,7 +355,7 @@
                         <div class="invite-card-header">
                           <div class="invite-card-title">
                             <IconTicket class="card-icon" />
-                            {{ $t('invite.inviteLink.inviteCode') }} {{ index + 1 }}
+                            {{ $t('invite.inviteLink.inviteCode') }}
                           </div>
                         </div>
                         
@@ -1636,9 +1636,7 @@ export default {
     font-size: 24px;
     font-weight: 500;
     letter-spacing: 1px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 10px 16px;
+    padding: 10px 0;
     display: flex;
     justify-content: center;
     position: relative;
@@ -3015,9 +3013,7 @@ export default {
   font-size: 24px;
   font-weight: 500;
   letter-spacing: 1px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px 16px;
+  padding: 10px 0;
   display: flex;
   justify-content: center;
   position: relative;
@@ -3211,7 +3207,7 @@ export default {
   
   .invite-code-display {
     font-size: 18px;
-    padding: 8px 12px;
+    padding: 8px 0;
   }
   
   .invite-card-footer {
