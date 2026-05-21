@@ -16,14 +16,26 @@ export const config  = {
 
     // API configuration
     API_CONFIG: {
+        // API URL获取方式: 'static'=使用静态URL, 'auto'=自动从当前域名获取
         urlMode: 'static',
+
+        // 是否展示后端联通性检测
         showCheckBackend: false,
+
+        // 静态URL模式下的基础URL,支持多个后端轮询 (urlMode = 'static'时使用)
         staticBaseUrl: [
-            'http://172.24.95.125:7001/api/v1'
+            'https://example.com/api/v1'
         ],
+
+        // 自动获取模式配置 (urlMode = 'auto'时使用)
         autoConfig: {
+            // 是否使用相同协议 (http/https)
             useSameProtocol: true,
+
+            // 是否拼接API路径
             appendApiPath: true,
+
+            // API路径
             apiPath: '/api/v1'
         }
     },
