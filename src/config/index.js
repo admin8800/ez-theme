@@ -30,8 +30,8 @@ export const config  = {
 
     // ====================  网站基础配置  ====================
     SITE_CONFIG: {
-        siteName: 'EZ THEME',
-        siteDescription: 'EZ UI',
+        siteName: 'Cloud',
+        siteDescription: 'Cloud',
         // copyright会自动使用当前年份
         copyright: `© ${new Date().getFullYear()} All Rights Reserved.`,
 
@@ -178,7 +178,7 @@ export const config  = {
             content: "<p><strong>常规套餐默认每月订单日重置流量，您当月未用使用完的流量，不会累积到下个月</strong></p>",
 
             // 冷却时间（小时），在此时间内不会再次显示弹窗
-            cooldownHours: 0,
+            cooldownHours: 8,
 
             // 等待时间（秒），用户需要等待多少秒才能关闭弹窗，设为0表示无需等待
             closeWaitSeconds: 0
@@ -245,12 +245,12 @@ export const config  = {
 
         // 客户端下载链接  //可以改成文档链接直接在新标签页打开
         clientLinks: {
-            ios: 'https://example.com',
-            android: 'https://example.com',
-            macos: 'https://example.com',
-            windows: 'https://example.com',
-            linux: 'https://example.com',
-            openwrt: 'https://example.com'
+            ios: 'https://apps.apple.com/us/app/shadowrocket/id932747118',
+            android: 'https://github.com/chen08209/FlClash/releases',
+            macos: 'https://github.com/clash-verge-rev/clash-verge-rev/releases',
+            windows: 'https://github.com/clash-verge-rev/clash-verge-rev/releases',
+            linux: 'https://github.com/clash-verge-rev/clash-verge-rev/releases',
+            openwrt: 'https://github.com/vernesong/OpenClash/releases'
         },
 
         // 订阅导入客户端显示控制 部分面板不支持SingBox导入请您注意检查
