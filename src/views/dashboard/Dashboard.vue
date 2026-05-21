@@ -1,102 +1,148 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-inner">
-      <AppCard class="dashboard-card welcome-card" :class="{'card-animate': !loading.userInfo}" hoverable no-padding>
-        <div class="card-header">
-          <h2 class="card-title">{{ $t('dashboard.welcome') }}</h2>
-        </div>
-        <div class="card-body">
-          <p class="">{{ $t('dashboard.welcomeDesc') }}</p>
-          <p v-if="userStats.userEmail && DASHBOARD_CONFIG.showUserEmail" class="user-email">
-            <IconMail :size="16"/>
-            <span>{{ userStats.userEmail }}</span>
-          </p>
-        </div>
-      </AppCard>
-
-      <!-- 通知区域 -->
-      <!-- 待处理事项提示 -->
-      <AppCard v-if="hasPendingItems" class="dashboard-card pending-items-card"
-           :class="{'card-animate': !loading.userStats}" style="animation-delay: 0.1s" hoverable no-padding>
-        <div class="card-header">
-          <h2 class="card-title">{{ $t('dashboard.pendingItems') }}</h2>
-        </div>
-        <div class="card-body">
-          <div class="pending-items-list">
-            <div v-if="userStats.pendingOrders > 0" class="pending-item" @click="router.push('/orders')">
-              <div class="pending-icon">
-                <IconShoppingCart :size="20"/>
-              </div>
-              <div class="pending-info">
-                <span class="">{{ $t('dashboard.pendingOrders') }} ({{ userStats.pendingOrders }})</span>
-              </div>
-              <div class="pending-action">
-                <IconChevronRight :size="16"/>
-              </div>
+      <section class="dashboard-hero card-animate">
+        <div class="hero-main-panel">
+          <div class="hero-kicker">
+            <span
+                class="hero-status-dot"
+                :class="{
+                  inactive: !hasPlan,
+                  danger: hasPlan && (isExpired || isTrafficDepleted),
+                  warning: hasPlan && (isExpiringSoon || isLowTraffic)
+                }"
+            ></span>
+            <span>{{ hasPlan ? $t('dashboard.subscriptionInfo') : $t('dashboard.welcome') }}</span>
+          </div>
+          <div class="hero-title-row">
+            <div>
+              <h1 class="hero-title">{{ hasPlan ? (userPlan.name || $t('dashboard.noSubscription')) : $t('dashboard.noPlanPrompt') }}</h1>
+              <p class="hero-subtitle">{{ $t('dashboard.welcomeDesc') }}</p>
             </div>
-
-            <div v-if="userStats.pendingTickets > 0" class="pending-item" @click="goToSupport">
-              <div class="pending-icon">
-                <IconMessage :size="20"/>
-              </div>
-              <div class="pending-info">
-                <span class="">{{ $t('dashboard.pendingTickets') }} ({{ userStats.pendingTickets }})</span>
-              </div>
-              <div class="pending-action">
-                <IconChevronRight :size="16"/>
-              </div>
+            <div v-if="userStats.userEmail && DASHBOARD_CONFIG.showUserEmail" class="hero-user">
+              <IconMail :size="16"/>
+              <span>{{ userStats.userEmail }}</span>
             </div>
           </div>
-        </div>
-      </AppCard>
 
-      <AppCard class="dashboard-card notice-card" :class="{'card-animate': !loading.notices}"
-           v-if="notices && notices.data && notices.data.length > 0" style="animation-delay: 0.2s" hoverable no-padding>
-        <div class="card-header">
-          <h2 class="card-title">{{ $t('dashboard.siteAnnouncement') }}</h2>
-          <div class="notice-counter">
-            {{ $t('common.noticeCount', {current: currentNoticeIndex + 1, total: notices.data.length}) }}
+          <div v-if="hasPlan" class="hero-progress">
+            <div class="hero-progress-head">
+              <span>{{ $t('dashboard.remainingTraffic') }}</span>
+              <strong>{{ trafficPercentage }}%</strong>
+            </div>
+            <div class="hero-progress-track">
+              <div
+                  class="hero-progress-bar"
+                  :class="{ warning: isLowTraffic && !isTrafficDepleted, danger: isTrafficDepleted }"
+                  :style="{ width: waterAnimationState.canAnimate ? `${trafficPercentage}%` : '0%' }"
+              ></div>
+            </div>
+          </div>
+
+          <div v-if="hasPlan" class="hero-metrics">
+            <div class="hero-metric">
+              <span>{{ $t('dashboard.remainingTraffic') }}</span>
+              <strong>{{ userStats.remainingTraffic }}</strong>
+            </div>
+            <div class="hero-metric">
+              <span>{{ $t('dashboard.remainingDays') }}</span>
+              <strong>
+                {{
+                  userStats.isRemainingDaysPermanent ? $t('dashboard.permanent') : userStats.remainingDays + $t('dashboard.days')
+                }}
+              </strong>
+            </div>
+            <div class="hero-metric">
+              <span>{{ $t('dashboard.accountBalance') }}</span>
+              <strong>{{ userStats.accountBalance }}</strong>
+            </div>
+            <div class="hero-metric" v-if="showDeviceLimit">
+              <span>{{ $t('dashboard.deviceLimit') }}</span>
+              <strong>
+                {{
+                  userPlan.deviceLimit === null ? `${userPlan.aliveIp} / ${$t('dashboard.unlimited')}` : `${userPlan.aliveIp} / ${userPlan.deviceLimit}`
+                }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button v-if="!hasPlan" class="hero-btn primary" @click="goToShop">
+              <IconShoppingBag :size="18"/>
+              <span>{{ $t('dashboard.purchasePlan') }}</span>
+            </button>
+            <button v-if="hasPlan && showImportSubscription" class="hero-btn primary" @click="toggleImportCard">
+              <IconShare :size="18"/>
+              <span>{{ $t('dashboard.importSubscription') }}</span>
+            </button>
+            <button v-if="hasPlan && showRenewPlanButton" class="hero-btn secondary" @click="renewPlan">
+              <IconShoppingCart :size="18"/>
+              <span>{{ $t('dashboard.renewPlan') }}</span>
+            </button>
+            <button v-if="hasPlan && showResetTrafficButton" class="hero-btn secondary" @click="openResetTrafficModal">
+              <IconRefresh :size="18"/>
+              <span>{{ $t('dashboard.resetTraffic') }}</span>
+            </button>
+            <button v-if="hasPlan && allowNewPeriod==='1'&&showResetTrafficButton" class="hero-btn secondary" @click="showPopup=true">
+              <IconCalendarPlus :size="18"/>
+              <span>{{ $t('dashboard.activateDataCycleInAdvance') }}</span>
+            </button>
+            <button class="hero-btn ghost" @click="goToSupport">
+              <IconMessage :size="18"/>
+              <span>{{ $t('dashboard.ticketSupport') }}</span>
+            </button>
           </div>
         </div>
-        <div v-if="loading.notices" class="card-body skeleton-loading">
-          <div class="skeleton-row"></div>
-          <div class="skeleton-row"></div>
-          <div class="skeleton-row"></div>
-        </div>
-        <div v-else class="card-body">
-          <transition name="fade-slide" mode="out-in">
-            <div class="notice-item" v-if="notices.data[currentNoticeIndex]" :key="currentNoticeIndex">
-              <div class="notice-title">{{ notices.data[currentNoticeIndex].title }}</div>
-              <div class="notice-footer">
-                <div class="notice-date">{{ formatDate(notices.data[currentNoticeIndex].created_at) }}</div>
-                <div class="notice-nav">
-                  <button
-                      class="btn-notice"
-                      @click="prevNotice"
-                      :disabled="currentNoticeIndex <= 0">
-                    <IconChevronLeft :size="16"/>
-                    {{ $t('common.prevNotice') }}
-                  </button>
-                  <button
-                      class="btn-notice"
-                      @click="showNoticeModal">
-                    <IconEye :size="16"/>
-                    {{ $t('common.viewDetails') }}
-                  </button>
-                  <button
-                      class="btn-notice"
-                      @click="nextNotice"
-                      :disabled="currentNoticeIndex >= notices.data.length - 1">
-                    {{ $t('common.nextNotice') }}
-                    <IconChevronRight :size="16"/>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </transition>
-        </div>
-      </AppCard>
 
+        <aside class="hero-side-panel">
+          <button v-if="hasPendingItems" class="hero-alert-row" @click="userStats.pendingOrders > 0 ? router.push('/orders') : goToSupport()">
+            <span class="hero-alert-icon">
+              <IconShoppingCart v-if="userStats.pendingOrders > 0" :size="18"/>
+              <IconMessage v-else :size="18"/>
+            </span>
+            <span>
+              {{
+                userStats.pendingOrders > 0
+                    ? `${$t('dashboard.pendingOrders')} (${userStats.pendingOrders})`
+                    : `${$t('dashboard.pendingTickets')} (${userStats.pendingTickets})`
+              }}
+            </span>
+            <IconChevronRight :size="16"/>
+          </button>
+
+          <div v-if="notices && notices.data && notices.data.length > 0" class="hero-notice">
+            <div class="hero-notice-head">
+              <span>{{ $t('dashboard.siteAnnouncement') }}</span>
+              <small>{{ currentNoticeIndex + 1 }} / {{ notices.data.length }}</small>
+            </div>
+            <transition name="fade-slide" mode="out-in">
+              <button class="hero-notice-card" v-if="notices.data[currentNoticeIndex]" :key="currentNoticeIndex" @click="showNoticeModal">
+                <span>{{ notices.data[currentNoticeIndex].title }}</span>
+                <small>{{ formatDate(notices.data[currentNoticeIndex].created_at) }}</small>
+              </button>
+            </transition>
+            <div class="hero-notice-nav">
+              <button @click="prevNotice" :disabled="currentNoticeIndex <= 0">
+                <IconChevronLeft :size="15"/>
+              </button>
+              <button @click="showNoticeModal">
+                <IconEye :size="15"/>
+              </button>
+              <button @click="nextNotice" :disabled="currentNoticeIndex >= notices.data.length - 1">
+                <IconChevronRight :size="15"/>
+              </button>
+            </div>
+          </div>
+
+          <button class="hero-quick-link" @click="openDocumentation">
+            <span>
+              <IconFileText :size="18"/>
+              {{ $t('dashboard.documentation') }}
+            </span>
+            <IconChevronRight :size="16"/>
+          </button>
+        </aside>
+      </section>
       <!-- 公告弹窗 -->
       <transition name="fade">
         <div v-if="showNoticeDetails" class="notice-modal-overlay" @click="closeNoticeModal">
@@ -120,101 +166,6 @@
           </transition>
         </div>
       </transition>
-
-      <!-- 套餐信息卡片 -->
-      <AppCard v-if="hasPlan" class="dashboard-card subscription-card" :class="{'card-animate': !loading.userInfo}"
-           style="animation-delay: 0.3s" hoverable no-padding>
-        <div v-if="loading.userInfo" class="skeleton-card">
-          <div class="skeleton-header"></div>
-          <div class="skeleton-body">
-            <div class="skeleton-row"></div>
-            <div class="skeleton-row"></div>
-            <div class="skeleton-row"></div>
-          </div>
-        </div>
-        <template v-else>
-          <div class="card-header">
-            <h2 class="card-title">{{ $t('dashboard.subscriptionInfo') }}</h2>
-          </div>
-          <div class="card-body">
-            <div class="subscription-info">
-              <div class="info-item">
-                <span class="info-label">{{ $t('dashboard.planName') }}</span>
-                <span class="info-value">{{ userPlan.name || $t('dashboard.noSubscription') }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">{{ $t('dashboard.expiryDate') }}</span>
-                <span class="info-value">
-                  {{
-                    userPlan.isExpireDatePermanent ? $t('dashboard.permanent') : (userPlan.expireDate || $t('dashboard.none'))
-                  }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">{{ $t('dashboard.planTraffic') }}</span>
-                <span class="info-value">{{ userPlan.totalTraffic || '0 GB' }}</span>
-              </div>
-              <!-- 添加下次重置时间，只有当resetDay存在时才显示 -->
-              <div class="info-item" v-if="userPlan.resetDay">
-                <span class="info-label">{{ $t('dashboard.nextResetTime') }}</span>
-                <span class="info-value">{{ userPlan.resetDay }} {{ $t('dashboard.days') }}</span>
-              </div>
-              <!-- 添加在线设备信息，仅当面板类型为 Xiao-board 时显示 -->
-              <div class="info-item" v-if="showDeviceLimit">
-                <span class="info-label">{{ $t('dashboard.deviceLimit') }}</span>
-                <span class="info-value">
-                  {{
-                    userPlan.deviceLimit === null ? `${userPlan.aliveIp} / ${$t('dashboard.unlimited')}` : `${userPlan.aliveIp} / ${userPlan.deviceLimit}`
-                  }}
-                </span>
-              </div>
-            </div>
-            <div class="subscription-actions">
-              <button v-if="showImportSubscription" class="btn-outline" :class="{
-                'btn-active': showImportCard,
-                'btn-highlight-btnbgcolor': DASHBOARD_CONFIG.importButtonHighlightBtnbgcolor
-              }" @click="toggleImportCard">
-                <IconShare :size="16" class="btn-icon"/>
-                <span class="">{{ $t('dashboard.importSubscription') }}</span>
-              </button>
-              <button
-                  v-if="showRenewPlanButton"
-                  class="btn-outline renew-plan-btn"
-                  :class="{
-                  'renew-warning': isExpiringSoon && !isExpired,
-                  'renew-danger': isExpired
-                }"
-                  @click="renewPlan"
-              >
-                <IconShoppingCart :size="16" class="btn-icon"/>
-                <span class="">{{ $t('dashboard.renewPlan') }}</span>
-              </button>
-              <!-- 重置流量按钮 - 根据配置和流量状态显示 -->
-              <button
-                  v-if="showResetTrafficButton"
-                  class="btn-outline reset-traffic-btn"
-                  :class="{
-                  'reset-warning': isLowTraffic && !isTrafficDepleted,
-                  'reset-danger': isTrafficDepleted
-                }"
-                  @click="openResetTrafficModal"
-              >
-                <IconRefresh :size="16" class="btn-icon"/>
-                <span class="">{{ $t('dashboard.resetTraffic') }}</span>
-
-              </button>
-              <button class="btn-outline" v-if="allowNewPeriod==='1'&&showResetTrafficButton" @click="showPopup=true">
-                <IconCalendarPlus :size="16" class="btn-icon"/>
-                <span>{{ $t('dashboard.activateDataCycleInAdvance') }}</span>
-              </button>
-              <button class="btn-outline" @click="goToSupport">
-                <IconMessage :size="16" class="btn-icon"/>
-                <span class="">{{ $t('dashboard.ticketSupport') }}</span>
-              </button>
-            </div>
-          </div>
-        </template>
-      </AppCard>
 
       <!-- 订阅导入卡片 -->
       <transition name="slide-fade">
@@ -453,122 +404,6 @@
           </div>
         </div>
       </transition>
-
-      <div class="stats-grid">
-        <template v-if="loading.userStats">
-          <AppCard v-for="i in 4" :key="i" class="stats-card skeleton-card" variant="stats" no-padding>
-            <div class="skeleton-icon"></div>
-            <div class="skeleton-content">
-              <div class="skeleton-row-sm"></div>
-              <div class="skeleton-row-xs"></div>
-            </div>
-          </AppCard>
-        </template>
-
-        <template v-else-if="!hasPlan">
-          <!-- 没有套餐时显示的提示卡片 -->
-          <AppCard class="dashboard-card stats-card no-plan-card" :class="{'card-animate': !loading.userStats}"
-               style="animation-delay: 0.5s; grid-column: span 4; margin: 0 auto; max-width: 1200px; width: 100%;" variant="stats" hoverable no-padding>
-            <div class="no-plan-content">
-              <div class="no-plan-icon">
-                <IconShoppingCart :size="45" class="icon-cart"/>
-              </div>
-              <div class="no-plan-message">
-                <div class="no-plan-title">{{ $t('dashboard.noPlanPrompt') }}</div>
-                <div class="no-plan-actions">
-                  <button class="action-button primary" @click="goToShop">
-                    <IconShoppingBag :size="18" class="btn-icon"/>
-                    <span>{{ $t('dashboard.purchasePlan') }}</span>
-                  </button>
-                  <button class="action-button secondary" @click="goToSupport">
-                    <IconMessage :size="18" class="btn-icon"/>
-                    <span>{{ $t('dashboard.ticketSupport') }}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </AppCard>
-        </template>
-
-        <template v-else>
-          <AppCard class="stats-card"
-               :class="{
-              'card-animate': !loading.userStats,
-              'warning-card': isLowTraffic && !isTrafficDepleted,
-              'danger-card': isTrafficDepleted
-            }"
-               style="animation-delay: 0.5s" variant="stats" hoverable no-padding>
-            <div class="stats-icon">
-              <IconTransferVertical :size="32"/>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ userStats.remainingTraffic }}</div>
-              <div class="stats-label">{{ $t('dashboard.remainingTraffic') }}</div>
-            </div>
-
-            <!-- 水流进度条效果 -->
-            <div class="water-container">
-              <div class="water-progress"
-                   :class="{'animate-water': waterAnimationState.canAnimate}"
-                   :style="{ height: waterAnimationState.canAnimate ? `${trafficPercentage}%` : '0%' }">
-              </div>
-            </div>
-          </AppCard>
-
-          <AppCard class="stats-card"
-               :class="{
-              'card-animate': !loading.userStats,
-              'warning-card': isExpiringSoon && !isExpired,
-              'danger-card': isExpired
-            }"
-               style="animation-delay: 0.6s" variant="stats" hoverable no-padding>
-            <div class="stats-icon">
-              <IconCalendar :size="32"/>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">
-                {{
-                  userStats.isRemainingDaysPermanent ? $t('dashboard.permanent') : userStats.remainingDays + $t('dashboard.days')
-                }}
-              </div>
-              <div class="stats-label">{{ $t('dashboard.remainingDays') }}</div>
-            </div>
-          </AppCard>
-
-          <AppCard class="stats-card"
-               :class="{'card-animate': !loading.userStats, 'balance-card': true, 'clickable': isXiaoPanel}"
-               style="animation-delay: 0.7s"
-               @click="isXiaoPanel ? navigateToDeposit() : null"
-               :style="isXiaoPanel ? { cursor: 'pointer' } : {}" variant="stats" :hoverable="isXiaoPanel" no-padding>
-            <div class="stats-icon">
-              <IconWallet :size="32"/>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ userStats.accountBalance }}</div>
-              <div class="stats-label">{{ $t('dashboard.accountBalance') }}</div>
-            </div>
-            <div v-if="isXiaoPanel" class="chevron-icon">
-              <IconChevronRight :size="20"/>
-            </div>
-          </AppCard>
-
-          <AppCard class="stats-card doc-card"
-               :class="{'card-animate': !loading.userStats}"
-               @click="openDocumentation"
-               style="animation-delay: 0.8s" variant="stats" hoverable no-padding>
-            <div class="stats-icon">
-              <IconFileText :size="32"/>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ $t('dashboard.viewHelp') }}</div>
-              <div class="stats-label">{{ $t('dashboard.documentation') }}</div>
-            </div>
-            <div class="chevron-icon">
-              <IconChevronRight :size="20"/>
-            </div>
-          </AppCard>
-        </template>
-      </div>
 
       <!-- 官方客户端下载区域 -->
       <AppCard class="dashboard-card download-card" :class="{'card-animate': !loading.userInfo}"
@@ -1899,19 +1734,475 @@ export default {
     max-width: 1200px;
   }
 
-  .welcome-card {
+  .dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.85fr);
+    gap: 20px;
     margin-bottom: 24px;
+    animation: dashboard-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: center top;
+  }
 
-    .user-email {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(var(--theme-color-rgb), 0.1);
-      color: var(--secondary-text-color);
-      font-size: 14px;
+  .hero-main-panel,
+  .hero-side-panel {
+    border: 1px solid var(--card-border-color);
+    border-radius: 18px;
+    background: var(--card-background);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+  }
+
+  .hero-main-panel {
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(var(--theme-color-rgb), 0.14), transparent 36%),
+      linear-gradient(135deg, rgba(var(--theme-color-rgb), 0.08), transparent 52%);
+      pointer-events: none;
     }
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .hero-kicker,
+  .hero-user,
+  .hero-progress-head,
+  .hero-actions,
+  .hero-alert-row,
+  .hero-notice-head,
+  .hero-notice-nav,
+  .hero-quick-link {
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-kicker {
+    gap: 8px;
+    margin-bottom: 14px;
+    color: var(--secondary-text-color);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .hero-status-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: inherit;
+      background: currentColor;
+      opacity: 0.14;
+      animation: hero-status-pulse 2.4s ease-out infinite;
+    }
+
+    &.inactive {
+      background: #94a3b8;
+      color: #94a3b8;
+      box-shadow: 0 0 0 5px rgba(148, 163, 184, 0.13);
+    }
+
+    &.warning {
+      background: #f59e0b;
+      color: #f59e0b;
+      box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.14);
+    }
+
+    &.danger {
+      background: #ef4444;
+      color: #ef4444;
+      box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.14);
+    }
+  }
+
+  .hero-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .hero-title {
+    margin: 0;
+    color: var(--text-color);
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 760;
+    letter-spacing: 0;
+    line-height: 1.15;
+  }
+
+  .hero-subtitle {
+    max-width: 620px;
+    margin: 10px 0 0;
+    color: var(--secondary-text-color);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .hero-user {
+    align-self: flex-start;
+    max-width: 280px;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid rgba(var(--theme-color-rgb), 0.12);
+    border-radius: 999px;
+    color: var(--secondary-text-color);
+    background: rgba(var(--theme-color-rgb), 0.06);
+    font-size: 13px;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .hero-progress {
+    margin-top: 24px;
+  }
+
+  .hero-progress-head {
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--secondary-text-color);
+    font-size: 13px;
+
+    strong {
+      color: var(--text-color);
+      font-size: 18px;
+    }
+  }
+
+  .hero-progress-track {
+    position: relative;
+    overflow: hidden;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(var(--theme-color-rgb), 0.1);
+  }
+
+  .hero-progress-bar {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--theme-color), rgba(var(--theme-color-rgb), 0.62));
+    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+      transform: translateX(-100%);
+      animation: hero-progress-sheen 1.35s 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    &.warning {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    &.danger {
+      background: linear-gradient(90deg, #ef4444, #fb7185);
+    }
+  }
+
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .hero-metric {
+    padding: 14px;
+    border: 1px solid rgba(var(--theme-color-rgb), 0.1);
+    border-radius: 14px;
+    background: rgba(var(--theme-color-rgb), 0.045);
+    animation: dashboard-item-rise 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.24s ease, background-color 0.24s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: rgba(var(--theme-color-rgb), 0.22);
+      background: rgba(var(--theme-color-rgb), 0.07);
+    }
+
+    &:nth-child(1) {
+      animation-delay: 0.06s;
+    }
+
+    &:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.14s;
+    }
+
+    &:nth-child(4) {
+      animation-delay: 0.18s;
+    }
+
+    span,
+    strong {
+      display: block;
+    }
+
+    span {
+      color: var(--secondary-text-color);
+      font-size: 12px;
+    }
+
+    strong {
+      margin-top: 6px;
+      color: var(--text-color);
+      font-size: 18px;
+      font-weight: 720;
+      word-break: break-word;
+    }
+  }
+
+  .hero-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 0 rgba(var(--theme-color-rgb), 0);
+    animation: dashboard-item-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    &:nth-child(1) {
+      animation-delay: 0.16s;
+    }
+
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.24s;
+    }
+
+    &:nth-child(4) {
+      animation-delay: 0.28s;
+    }
+
+    &:nth-child(5) {
+      animation-delay: 0.32s;
+    }
+
+    &:nth-child(6) {
+      animation-delay: 0.36s;
+    }
+
+    &.primary {
+      color: #fff;
+      background: var(--theme-color);
+
+      &:hover {
+        box-shadow: 0 10px 22px rgba(var(--theme-color-rgb), 0.2);
+      }
+    }
+
+    &.secondary {
+      color: var(--theme-color);
+      border-color: rgba(var(--theme-color-rgb), 0.24);
+      background: rgba(var(--theme-color-rgb), 0.08);
+    }
+
+    &.ghost {
+      color: var(--secondary-text-color);
+      border-color: var(--card-border-color);
+      background: var(--card-background);
+    }
+  }
+
+  .hero-side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .hero-alert-row,
+  .hero-quick-link,
+  .hero-notice-card {
+    width: 100%;
+    border: 1px solid var(--card-border-color);
+    border-radius: 14px;
+    background: rgba(var(--theme-color-rgb), 0.045);
+    color: var(--text-color);
+    cursor: pointer;
+    animation: dashboard-item-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: transform 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: rgba(var(--theme-color-rgb), 0.28);
+      background: rgba(var(--theme-color-rgb), 0.08);
+    }
+  }
+
+  .hero-alert-row,
+  .hero-quick-link {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 14px;
+    font-weight: 600;
+  }
+
+  .hero-alert-row {
+    animation-delay: 0.12s;
+  }
+
+  .hero-notice {
+    animation: dashboard-item-rise 0.42s 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero-quick-link {
+    animation-delay: 0.2s;
+  }
+
+  .hero-alert-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    color: var(--theme-color);
+    background: rgba(var(--theme-color-rgb), 0.12);
+  }
+
+  .hero-notice {
+    padding: 2px 0 0;
+    border-top: 1px solid rgba(var(--theme-color-rgb), 0.1);
+  }
+
+  .hero-notice-head {
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+
+    small {
+      color: var(--secondary-text-color);
+      font-weight: 600;
+    }
+  }
+
+  .hero-notice-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 48px;
+    padding: 10px 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: left;
+    transition: color 0.2s ease;
+
+    span,
+    small {
+      display: block;
+    }
+
+    span {
+      overflow: hidden;
+      color: var(--text-color);
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      color: var(--secondary-text-color);
+      white-space: nowrap;
+    }
+
+    &:hover {
+      transform: none;
+      border-color: transparent;
+      background: transparent;
+
+      span {
+        color: var(--theme-color);
+      }
+    }
+  }
+
+  .hero-notice-nav {
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--card-border-color);
+      border-radius: 10px;
+      color: var(--secondary-text-color);
+      background: transparent;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
+      &:hover:not(:disabled) {
+        color: var(--theme-color);
+        border-color: rgba(var(--theme-color-rgb), 0.24);
+        background: rgba(var(--theme-color-rgb), 0.06);
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .hero-quick-link span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .dashboard-card {
@@ -1946,226 +2237,6 @@ export default {
       }
     }
   }
-
-  .subscription-card {
-    margin-bottom: 24px;
-
-    .subscription-info {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-bottom: 15px;
-
-      .info-item {
-        display: flex;
-        flex-direction: column;
-
-        .info-label {
-          font-size: 13px;
-          color: var(--secondary-text-color);
-          margin-bottom: 5px;
-        }
-
-        .info-value {
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-color);
-        }
-      }
-    }
-
-    .subscription-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 15px;
-
-      @media (min-width: 769px) {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-
-        button {
-          flex: 0 0 auto;
-          min-width: 120px;
-        }
-      }
-
-      @media (max-width: 768px) {
-        flex-direction: column;
-        gap: 10px;
-
-        button {
-          width: 100%;
-        }
-      }
-
-      .reset-traffic-btn {
-        position: relative;
-        overflow: hidden;
-
-        &.reset-warning {
-          color: #ff9800;
-          border-color: #ff9800;
-          background-color: rgba(255, 152, 0, 0.1);
-        }
-
-        &.reset-danger {
-          color: #f44336;
-          border-color: #f44336;
-          background-color: rgba(244, 67, 54, 0.1);
-        }
-      }
-
-      .renew-plan-btn {
-        position: relative;
-        overflow: hidden;
-
-        &.renew-warning {
-          color: #ff9800;
-          border-color: #ff9800;
-          background-color: rgba(255, 152, 0, 0.1);
-        }
-
-        &.renew-danger {
-          color: #f44336;
-          border-color: #f44336;
-          background-color: rgba(244, 67, 54, 0.1);
-        }
-      }
-    }
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
-
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
-    }
-
-    @media (min-width: 1200px) {
-      grid-template-columns: repeat(4, 1fr);
-    }
-
-    .stats-card {
-      position: relative;
-      background-color: var(--card-background);
-      border-radius: 16px;
-      box-shadow: none;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 18px;
-      transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-      overflow: hidden;
-      border: 1px solid var(--card-border-color);
-
-      .water-container {
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        border-radius: inherit;
-        pointer-events: none;
-      }
-
-      .water-progress {
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: rgba(var(--theme-color-rgb), 0.12);
-        transition: none;
-        border-radius: 0 0 16px 16px;
-        height: 0;
-
-        &.animate-water {
-          transition: height 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        &:after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-        }
-      }
-
-      .stats-icon, .stats-info {
-        position: relative;
-        z-index: 1;
-      }
-
-      &.warning-card .water-progress {
-        background-color: rgba(255, 152, 0, 0.15);
-      }
-
-      &.danger-card .water-progress {
-        background-color: rgba(244, 67, 54, 0.15);
-      }
-
-      @keyframes wave {
-        0% {
-          transform: translateX(0) translateZ(0);
-        }
-        100% {
-          transform: translateX(-50%) translateZ(0);
-        }
-      }
-
-      &:hover {
-        border-color: var(--card-hover-border-color);
-        box-shadow: none;
-      }
-
-      .stats-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 60px;
-        height: 60px;
-        background-color: rgba(var(--theme-color-rgb), 0.1);
-        border-radius: 12px;
-        margin-right: 15px;
-        color: var(--theme-color);
-      }
-
-      .stats-info {
-        flex: 1;
-
-        .stats-value {
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--text-color);
-          margin-bottom: 5px;
-        }
-
-        .stats-label {
-          font-size: 14px;
-          color: var(--secondary-text-color);
-        }
-      }
-
-      .chevron-icon {
-        color: var(--theme-color);
-        opacity: 0.5;
-        transition: all 0.3s ease;
-      }
-
-      &:hover {
-        .chevron-icon {
-          transform: translateX(3px);
-          opacity: 1;
-        }
-      }
-    }
-  }
-
 
   .download-card {
     .download-options {
@@ -2244,179 +2315,6 @@ export default {
     }
   }
 
-
-  .notice-card {
-    margin-bottom: 24px;
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .notice-counter {
-        font-size: 14px;
-        color: var(--secondary-text-color);
-      }
-    }
-
-    .notice-item {
-      position: relative;
-      padding: 16px;
-      border-radius: 8px;
-      background-color: rgba(var(--theme-color-rgb), 0.05);
-
-      .notice-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--text-color);
-      }
-
-      .notice-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-
-        .notice-date {
-          font-size: 12px;
-          color: var(--secondary-text-color);
-          opacity: 0.7;
-        }
-
-        .notice-nav {
-          display: flex;
-          gap: 8px;
-
-          .btn-notice {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            background-color: rgba(var(--theme-color-rgb), 0.1);
-            color: var(--theme-color);
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-
-            &:hover:not(:disabled) {
-              background-color: rgba(var(--theme-color-rgb), 0.2);
-              transform: translateY(-1px);
-            }
-
-            &:disabled {
-              opacity: 0.5;
-              cursor: not-allowed;
-            }
-          }
-        }
-
-        @media (max-width: 576px) {
-          flex-direction: column;
-          align-items: flex-start;
-
-          .notice-nav {
-            width: 100%;
-
-            .btn-notice {
-              flex: 1;
-              justify-content: center;
-              padding: 8px;
-            }
-          }
-        }
-
-        @media (max-width: 470px) {
-          .notice-nav {
-            display: grid;
-            grid-template-rows: auto auto;
-            gap: 8px;
-            width: 100%;
-
-            .btn-notice:nth-child(2) {
-              grid-row: 1;
-              grid-column: 1 / span 2;
-            }
-
-            .btn-notice:nth-child(1),
-            .btn-notice:nth-child(3) {
-              grid-row: 2;
-            }
-
-            .btn-notice:nth-child(1) {
-              grid-column: 1;
-            }
-
-            .btn-notice:nth-child(3) {
-              grid-column: 2;
-            }
-
-            .btn-notice {
-              margin: 0;
-              width: 100%;
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  .pending-items-card {
-    margin-bottom: 24px;
-
-    .pending-items-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .pending-item {
-      display: flex;
-      align-items: center;
-      padding: 15px;
-      border-radius: 10px;
-      background-color: rgba(var(--theme-color-rgb), 0.05);
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &:hover {
-        background-color: rgba(var(--theme-color-rgb), 0.1);
-        transform: translateY(-2px);
-      }
-
-      .pending-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        background-color: rgba(var(--theme-color-rgb), 0.15);
-        color: var(--theme-color);
-        margin-right: 15px;
-      }
-
-      .pending-info {
-        flex: 1;
-        font-weight: 500;
-      }
-
-      .pending-action {
-        color: var(--secondary-text-color);
-        transition: transform 0.3s ease;
-      }
-
-      &:hover .pending-action {
-        transform: translateX(3px);
-        color: var(--theme-color);
-      }
-    }
-  }
 }
 
 
@@ -2451,108 +2349,6 @@ export default {
 }
 
 
-.btn-primary, .btn-outline, .btn-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  .btn-icon {
-    margin-right: 4px;
-  }
-}
-
-.btn-primary {
-  background-color: var(--theme-color);
-  color: white;
-  border: none;
-
-  &:hover {
-    background-color: var(--primary-color-hover);
-    transform: translateY(-1px);
-  }
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-
-  &:hover {
-    border-color: var(--theme-color);
-    color: var(--theme-color);
-    background-color: rgba(var(--theme-color-rgb), 0.05);
-    transform: translateY(-1px);
-  }
-
-
-  &.btn-highlight-btnbgcolor {
-    position: relative;
-    overflow: hidden;
-    background-color: var(--theme-color);
-    color: white;
-    border-color: var(--theme-color);
-
-    &:hover {
-      background-color: var(--primary-color-hover, var(--theme-color));
-      color: white;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(var(--theme-color-rgb), 0.25);
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 50%;
-      height: 100%;
-      background: linear-gradient(
-              to right,
-              rgba(255, 255, 255, 0) 0%,
-              rgba(255, 255, 255, 0.2) 50%,
-              rgba(255, 255, 255, 0) 100%
-      );
-      animation: card-shimmer 3s infinite;
-      transform: skewX(-25deg);
-    }
-  }
-}
-
-@keyframes card-shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 200%;
-  }
-}
-
-.btn-action {
-  background-color: transparent;
-  color: var(--secondary-text-color);
-  border: none;
-  padding: 5px 10px;
-  font-size: 13px;
-
-  &:hover {
-    color: var(--theme-color);
-    background-color: rgba(var(--theme-color-rgb), 0.05);
-  }
-
-  .action-icon {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s ease;
@@ -2568,6 +2364,105 @@ export default {
   transform: translateX(-20px);
 }
 
+@keyframes dashboard-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-item-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-progress-sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes hero-status-pulse {
+  from {
+    opacity: 0.18;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-container .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-container .hero-title-row {
+    flex-direction: column;
+  }
+
+  .dashboard-container .hero-user {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-container .hero-main-panel,
+  .dashboard-container .hero-side-panel {
+    border-radius: 16px;
+  }
+
+  .dashboard-container .hero-main-panel {
+    padding: 18px;
+  }
+
+  .dashboard-container .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-container .hero-btn {
+    width: 100%;
+  }
+
+  .dashboard-container .hero-notice-card {
+    grid-template-columns: 1fr;
+
+    small {
+      margin-top: 4px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-container .dashboard-hero,
+  .dashboard-container .hero-progress-bar,
+  .dashboard-container .hero-progress-bar::after,
+  .dashboard-container .hero-status-dot::after,
+  .dashboard-container .hero-metric,
+  .dashboard-container .hero-btn,
+  .dashboard-container .hero-alert-row,
+  .dashboard-container .hero-notice,
+  .dashboard-container .hero-quick-link,
+  .dashboard-container .hero-notice-card {
+    animation: none;
+    transition: none;
+  }
+}
+
 
 @media (max-width: 768px) {
   .dashboard-container {
@@ -2575,158 +2470,8 @@ export default {
     padding-bottom: 80px;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .subscription-card .subscription-info {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .subscription-card .info-item {
-    width: 100%;
-    padding: 0;
-    border-right: none;
-    border-bottom: 1px solid var(--border-light-color);
-    padding-bottom: 15px;
-  }
-
-  .subscription-card .info-item:last-child {
-    border-bottom: none;
-  }
-
-  .subscription-actions {
-    flex-direction: column;
-    margin-top: 15px;
-  }
-
   .platform-selector {
     flex-wrap: wrap;
-  }
-
-  .no-plan-content {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-  }
-
-  .no-plan-icon {
-    width: 65px;
-    height: 65px;
-    margin: 0 auto;
-    transform: rotate(0deg);
-  }
-
-  .no-plan-icon .icon-cart {
-    width: 36px;
-    height: 36px;
-  }
-
-  .no-plan-message {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    text-align: center;
-  }
-
-  .no-plan-title {
-    font-size: 1.1rem;
-    margin-bottom: 12px;
-    text-align: center;
-  }
-
-  .no-plan-actions {
-    justify-content: center;
-    width: 100%;
-    gap: 10px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .no-plan-actions .action-button {
-    padding: 8px 15px;
-    min-width: 120px;
-    justify-content: center;
-  }
-
-  .no-plan-actions .action-button span {
-    font-size: 14px;
-  }
-
-  .no-plan-actions .action-button .btn-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .stats-card.no-plan-card {
-    padding: 15px 12px;
-  }
-}
-
-@media (min-width: 769px) {
-  .subscription-actions {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1199px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-}
-
-
-.stats-card.doc-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stats-card.doc-card:hover {
-  background-color: rgba(var(--theme-color-rgb), 0.08);
-  transform: translateY(-3px);
-}
-
-.stats-card.doc-card .stats-icon {
-  background-color: rgba(92, 124, 250, 0.15);
-  color: #5c7cfa;
-}
-
-.stats-card.doc-card .stats-value {
-  color: var(--theme-color);
-}
-
-.stats-card.doc-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-          to right,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0.2) 50%,
-          rgba(255, 255, 255, 0) 100%
-  );
-  animation: card-shimmer 3s infinite;
-  transform: skewX(-25deg);
-}
-
-@keyframes card-shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 200%;
   }
 }
 
@@ -3124,165 +2869,6 @@ export default {
 }
 
 
-.stats-card.warning-card {
-  border-color: #ff9800;
-  box-shadow: none;
-
-  .stats-icon {
-    background-color: rgba(255, 152, 0, 0.1);
-    color: #ff9800;
-  }
-
-  .stats-value {
-    color: #ff9800;
-  }
-}
-
-.stats-card.danger-card {
-  border-color: #f44336;
-  box-shadow: none;
-
-  .stats-icon {
-    background-color: rgba(244, 67, 54, 0.1);
-    color: #f44336;
-  }
-
-  .stats-value {
-    color: #f44336;
-  }
-}
-
-
-
-
-.skeleton-card {
-  width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%);
-    background-image: linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0) 0,
-            rgba(255, 255, 255, 0.2) 20%,
-            rgba(255, 255, 255, 0.5) 60%,
-            rgba(255, 255, 255, 0) 100%
-    );
-    animation: shimmer 2s infinite;
-    z-index: 1;
-  }
-}
-
-
-.skeleton-header {
-  height: 24px;
-  margin-bottom: 20px;
-  background-color: var(--skeleton-bg, rgba(0, 0, 0, 0.05));
-  border-radius: 6px;
-  width: 30%;
-  margin: 16px 20px;
-  position: relative;
-}
-
-.skeleton-body {
-  padding: 0 20px 20px;
-}
-
-.skeleton-row {
-  height: 16px;
-  margin-bottom: 16px;
-  background-color: var(--skeleton-bg, rgba(0, 0, 0, 0.05));
-  border-radius: 4px;
-  width: 100%;
-  position: relative;
-}
-
-.skeleton-row:last-child {
-  width: 75%;
-  margin-bottom: 0;
-}
-
-
-.dark-theme .skeleton-header,
-.dark-theme .skeleton-row,
-.dark-theme .skeleton-circle,
-.dark-theme .skeleton-row-sm,
-.dark-theme .skeleton-row-xs {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-
-.skeleton-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background-color: var(--skeleton-bg, rgba(0, 0, 0, 0.05));
-  margin-right: 16px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.skeleton-content {
-  flex: 1;
-  position: relative;
-}
-
-.skeleton-row-sm {
-  height: 16px;
-  background-color: var(--skeleton-bg, rgba(0, 0, 0, 0.05));
-  border-radius: 4px;
-  width: 80%;
-  margin-bottom: 10px;
-  position: relative;
-}
-
-.skeleton-row-xs {
-  height: 12px;
-  background-color: var(--skeleton-bg, rgba(0, 0, 0, 0.05));
-  border-radius: 4px;
-  width: 50%;
-  position: relative;
-}
-
-
-.stats-card.skeleton-card {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  animation: none;
-  background-color: var(--card-background);
-  box-shadow: none;
-  border: 1px solid var(--card-border-color);
-  position: relative;
-}
-
-.stats-card.skeleton-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-          90deg,
-          rgba(255, 255, 255, 0) 0,
-          rgba(255, 255, 255, 0.2) 20%,
-          rgba(255, 255, 255, 0.5) 60%,
-          rgba(255, 255, 255, 0) 100%
-  );
-  animation: shimmer 2s infinite;
-  z-index: 1;
-}
-
 .import-action .import-content .import-desc {
   color: var(--secondary-text-color);
   font-size: 12px;
@@ -3344,80 +2930,6 @@ export default {
       color: var(--theme-color);
       opacity: 0.8;
     }
-  }
-}
-
-
-@media (min-width: 1200px) {
-  .stats-card.no-plan-card {
-    padding: 25px 30px;
-  }
-
-  .no-plan-content {
-    gap: 30px;
-  }
-
-  .no-plan-title {
-    font-size: 1.3rem;
-  }
-
-  .no-plan-actions .action-button {
-    padding: 12px 22px;
-    font-size: 16px;
-  }
-}
-
-
-.no-plan-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.no-plan-actions .action-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-
-@media screen and (min-width: 769px) {
-  .no-plan-content {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    position: relative;
-    z-index: 1;
-    flex-direction: row;
-  }
-
-  .no-plan-message {
-    flex: 1;
-    text-align: left;
-    align-items: flex-start;
-    width: auto;
-  }
-
-  .no-plan-title {
-    text-align: left;
-    width: auto;
-  }
-
-  .no-plan-actions {
-    justify-content: flex-start;
-    width: auto;
-    flex-direction: row;
-  }
-
-  .no-plan-actions .action-button {
-    width: auto;
-    max-width: none;
   }
 }
 
@@ -3890,37 +3402,6 @@ export default {
 
 <!-- 全局样式，不受scoped限制 -->
 <style lang="scss">
-@use '@/assets/styles/no-plan-card' as *;
-
-.stats-card.warning-card {
-  border-color: #ff9800 !important;
-  box-shadow: none !important;
-
-  .stats-icon {
-    background-color: rgba(255, 152, 0, 0.1) !important;
-    color: #ff9800 !important;
-  }
-
-  .stats-value {
-    color: #ff9800 !important;
-  }
-}
-
-.stats-card.danger-card {
-  border-color: #f44336 !important;
-  box-shadow: none !important;
-
-  .stats-icon {
-    background-color: rgba(244, 67, 54, 0.1) !important;
-    color: #f44336 !important;
-  }
-
-  .stats-value {
-    color: #f44336 !important;
-  }
-}
-
-
 .eztheme-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -3979,19 +3460,4 @@ a.eztheme-btn {
 }
 
 
-.stats-card.balance-card.clickable {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stats-card.balance-card.clickable:hover {
-  background-color: rgba(var(--theme-color-rgb), 0.08);
-  transform: translateY(-3px);
-}
-
-.stats-card.balance-card .stats-value {
-  color: var(--theme-color);
-}
 </style>
