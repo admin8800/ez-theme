@@ -974,12 +974,6 @@ onUnmounted(() => {
 
       font-family: inherit;
 
-      padding: 8px;
-
-      background-color: rgba(0, 0, 0, 0.03);
-
-      border-radius: 4px;
-
     }
 
   }

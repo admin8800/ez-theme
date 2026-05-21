@@ -18,7 +18,8 @@
           class="app-dialog__dialog"
           :class="[
             `app-dialog__dialog--${size}`,
-            `app-dialog__dialog--scroll-${scroll}`
+            `app-dialog__dialog--scroll-${scroll}`,
+            { 'app-dialog__dialog--no-dividers': !showDividers }
           ]"
           role="dialog"
           aria-modal="true"
@@ -111,6 +112,10 @@ export default {
       default: false
     },
     showClose: {
+      type: Boolean,
+      default: true
+    },
+    showDividers: {
       type: Boolean,
       default: true
     },
@@ -306,6 +311,13 @@ export default {
   gap: 10px;
   padding: 16px 24px;
   border-top: 1px solid var(--card-border-color, var(--border-color));
+}
+
+.app-dialog__dialog--no-dividers {
+  .app-dialog__header,
+  .app-dialog__footer {
+    border-color: transparent;
+  }
 }
 
 .app-dialog__close-trigger {

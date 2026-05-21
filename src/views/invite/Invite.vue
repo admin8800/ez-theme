@@ -183,13 +183,9 @@
               </button>
             </div>
             <div class="modal-body">
-              <div class="alert alert-warning">
-                <IconAlertTriangle :size="22" class="alert-icon" />
-                <div class="alert-content">
-                  <div class="alert-title">{{ $t('invite.transfer.warning') }}</div>
-                  <div class="alert-desc">{{ $t('invite.transfer.warningDesc') }}</div>
-                </div>
-              </div>
+              <AppAlert :title="$t('invite.transfer.warning')">
+                {{ $t('invite.transfer.warningDesc') }}
+              </AppAlert>
               
               <div class="transfer-form">
                 <div class="form-group">
@@ -241,21 +237,13 @@
               </button>
             </div>
             <div class="modal-body">
-              <div v-if="withdrawMethods.length === 0" class="alert alert-warning">
-                <IconAlertTriangle :size="22" class="alert-icon" />
-                <div class="alert-content">
-                  <div class="alert-title">{{ $t('invite.withdraw.tip') }}</div>
-                  <div class="alert-desc">{{ $t('invite.withdraw.noPlatforms') }}</div>
-                </div>
-              </div>
+              <AppAlert v-if="withdrawMethods.length === 0" :title="$t('invite.withdraw.tip')">
+                {{ $t('invite.withdraw.noPlatforms') }}
+              </AppAlert>
               
-              <div v-else-if="parseFloat(inviteStats.availableCommission) <= 0" class="alert alert-warning">
-                <IconAlertTriangle :size="22" class="alert-icon" />
-                <div class="alert-content">
-                  <div class="alert-title">{{ $t('invite.withdraw.tip') }}</div>
-                  <div class="alert-desc">{{ $t('invite.withdraw.insufficientFunds') }}</div>
-                </div>
-              </div>
+              <AppAlert v-else-if="parseFloat(inviteStats.availableCommission) <= 0" :title="$t('invite.withdraw.tip')">
+                {{ $t('invite.withdraw.insufficientFunds') }}
+              </AppAlert>
               
               <div v-else class="transfer-form">
                 <div class="form-group">
@@ -602,6 +590,7 @@ import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue';
 import { useToast } from '@/composables/useToast';
 import { INVITE_CONFIG } from '@/utils/baseConfig';
+import AppAlert from '@/components/common/AppAlert.vue';
 import { buildDisplayPageNumbers, buildInviteLink, formatInviteCodeDate, formatInviteDate } from './composables/invitePresentation';
 import { getInviteData, getInviteDetails, getCommissionConfig, generateInviteCode, transferCommission, withdrawCommission } from '@/api/invite';
 import {
@@ -626,7 +615,6 @@ import {
   IconChevronRight,
   IconChevronDown,
   IconTicket,
-  IconAlertTriangle,
   IconReceipt,
   IconReceipt2,
 } from '@tabler/icons-vue';
@@ -655,9 +643,9 @@ export default {
     IconChevronRight,
     IconChevronDown,
     IconTicket,
-    IconAlertTriangle,
     IconReceipt,
     IconReceipt2,
+    AppAlert,
   },
   setup() {
     const { showToast } = useToast();
@@ -2470,20 +2458,6 @@ export default {
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     
-    .alert.alert-warning {
-      background-color: rgba(255, 152, 0, 0.1);
-      border-color: rgba(255, 152, 0, 0.25);
-      
-      .alert-icon {
-        color: #ff9800;
-        filter: drop-shadow(0 1px 3px rgba(255, 152, 0, 0.3));
-      }
-      
-      .alert-desc {
-        color: #ff9800;
-      }
-    }
-    
     .input-with-prefix {
       .input-prefix {
         background-color: rgba(255, 255, 255, 0.05);
@@ -2653,52 +2627,6 @@ export default {
     font-size: 15px;
     line-height: 1.6;
     margin: 0 0 16px;
-  }
-  
-  .alert {
-    display: flex;
-    align-items: center;
-    margin-bottom: 24px;
-    border-radius: 12px;
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    
-    .alert-icon {
-      flex-shrink: 0;
-      margin-right: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .alert-content {
-      flex: 1;
-    }
-    
-    &.alert-warning {
-      background-color: rgba(255, 152, 0, 0.08);
-      border: 1px solid rgba(255, 152, 0, 0.2);
-      
-      .alert-icon {
-        color: #ff9800;
-        filter: drop-shadow(0 2px 4px rgba(255, 152, 0, 0.3));
-      }
-      
-      .alert-title {
-        font-weight: 600;
-        margin-bottom: 4px;
-        color: #ff9800;
-        font-size: 15px;
-      }
-      
-      .alert-desc {
-        color: var(--text-color);
-        opacity: 0.9;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-    }
   }
   
   .form-group {
@@ -3422,52 +3350,6 @@ export default {
   
   .card-body {
     padding: 20px;
-  }
-  
-  .alert {
-    display: flex;
-    align-items: center;
-    margin-bottom: 24px;
-    border-radius: 12px;
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    
-    .alert-icon {
-      flex-shrink: 0;
-      margin-right: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .alert-content {
-      flex: 1;
-    }
-    
-    &.alert-warning {
-      background-color: rgba(255, 152, 0, 0.08);
-      border: 1px solid rgba(255, 152, 0, 0.2);
-      
-      .alert-icon {
-        color: #ff9800;
-        filter: drop-shadow(0 2px 4px rgba(255, 152, 0, 0.3));
-      }
-      
-      .alert-title {
-        font-weight: 600;
-        margin-bottom: 4px;
-        color: #ff9800;
-        font-size: 15px;
-      }
-      
-      .alert-desc {
-        color: var(--text-color);
-        opacity: 0.9;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-    }
   }
   
   .transfer-form {

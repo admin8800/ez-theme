@@ -446,15 +446,19 @@
     <CommonDialog
       :show-dialog="showConfirmDialog"
       :title="$t('order.title')"
-      :content="ORDER_CONFIG.confirmOrderContent"
       :show-close-icon="true"
+      :show-dividers="false"
       :show-cancel-button="true"
       :show-confirm-button="true"
       :cancel-button-i18n-key="'common.cancel'"
       :confirm-button-i18n-key="'order.confirm_purchase'"
       @close="handleConfirmDialogClose"
       @confirm="handleConfirmDialogConfirm"
-    />
+    >
+      <AppAlert class="order-confirm-alert" :title="$t('order.confirm_purchase')">
+        <div v-html="ORDER_CONFIG.confirmOrderContent"></div>
+      </AppAlert>
+    </CommonDialog>
   </div>
 
 </template>
@@ -478,6 +482,7 @@ import { getUserInfo } from '@/api/dashboard';
 import { isXboard, ORDER_CONFIG } from '@/utils/baseConfig';
 
 import CommonDialog from '@/components/popup/CommonDialog.vue';
+import AppAlert from '@/components/common/AppAlert.vue';
 
 import {
 
@@ -519,7 +524,9 @@ export default {
 
     IconAlertTriangle,
 
-    CommonDialog
+    CommonDialog,
+
+    AppAlert
 
   },
 
@@ -1539,6 +1546,10 @@ export default {
 
     }
 
+  }
+
+  .order-confirm-alert {
+    margin-bottom: 0;
   }
 
   

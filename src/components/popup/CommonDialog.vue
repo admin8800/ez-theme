@@ -2,13 +2,18 @@
   <AppDialog
     :open="showDialog"
     :title="title"
-    :content="content"
+    content=""
     :show-close="showCloseIcon"
+    :show-dividers="showDividers"
     :dismissable="clickOverlayToClose"
     size="md"
     backdrop="opaque"
     @close="handleClose"
   >
+    <slot>
+      <div v-if="content" v-html="content"></div>
+    </slot>
+
     <template #footer v-if="showCancelButton || showConfirmButton">
       <button
         v-if="showCancelButton"
@@ -83,6 +88,10 @@ export default {
     clickOverlayToClose: {
       type: Boolean,
       default: true
+    },
+    showDividers: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['close', 'confirm'],
@@ -105,42 +114,55 @@ export default {
 
 <style lang="scss" scoped>
 .dialog-btn {
-  min-width: 88px;
-  padding: 9px 18px;
-  border-radius: 8px;
-  font-size: 14px;
+  min-width: 100px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .dialog-btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .dialog-btn-cancel {
   color: var(--text-color);
-  background-color: var(--card-hover-background, var(--card-background));
-  border: 1px solid var(--card-border-color, var(--border-color));
+  background-color: transparent;
+  border: 1px solid var(--border-color);
 }
 
 .dialog-btn-cancel:hover {
-  border-color: var(--card-hover-border-color, var(--theme-color));
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .dialog-btn-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: #fff;
   background-color: var(--theme-color);
-  border: 1px solid var(--theme-color);
+  border: none;
+  box-shadow: 0 4px 10px rgba(var(--theme-color-rgb), 0.3);
 }
 
 .dialog-btn-confirm:hover {
-  background-color: var(--theme-hover-color, var(--theme-color));
+  background-color: rgba(var(--theme-color-rgb), 0.9);
+  box-shadow: 0 6px 15px rgba(var(--theme-color-rgb), 0.4);
 }
 
 @media (max-width: 768px) {
+  :deep(.app-dialog__footer) {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px;
+  }
+
   .dialog-btn {
-    width: 100%;
+    width: auto;
   }
 }
 </style>
