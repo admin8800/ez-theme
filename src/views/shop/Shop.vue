@@ -1752,20 +1752,13 @@ export default {
 
     display: grid;
 
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 360px));
 
     gap: 24px;
 
+    justify-content: center;
+
     margin-bottom: 24px;
-
-    
-
-    @media (max-width: 1200px) {
-
-      grid-template-columns: repeat(2, 1fr);
-
-    }
-
     
 
     @media (max-width: 768px) {
@@ -1781,6 +1774,8 @@ export default {
       border-radius: 16px;
 
       overflow: hidden;
+
+      width: 100%;
 
     }
 
@@ -2324,7 +2319,7 @@ export default {
 
     min-width: 120px;
 
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
@@ -2348,9 +2343,9 @@ export default {
 
     padding: 0 16px;
 
-    margin-top: 12px;
+    margin: 12px auto 0;
 
-    align-self: flex-start;
+    align-self: center;
 
     
 
@@ -2954,4 +2949,3 @@ export default {
 }
 
 </style> 
-

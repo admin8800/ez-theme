@@ -2664,15 +2664,6 @@ export default {
     position: relative;
     overflow: hidden;
     
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-    }
-    
     .alert-icon {
       flex-shrink: 0;
       margin-right: 14px;
@@ -2688,10 +2679,6 @@ export default {
     &.alert-warning {
       background-color: rgba(255, 152, 0, 0.08);
       border: 1px solid rgba(255, 152, 0, 0.2);
-      
-      &::before {
-        background-color: #ff9800;
-      }
       
       .alert-icon {
         color: #ff9800;
@@ -3446,15 +3433,6 @@ export default {
     position: relative;
     overflow: hidden;
     
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-    }
-    
     .alert-icon {
       flex-shrink: 0;
       margin-right: 14px;
@@ -3470,10 +3448,6 @@ export default {
     &.alert-warning {
       background-color: rgba(255, 152, 0, 0.08);
       border: 1px solid rgba(255, 152, 0, 0.2);
-      
-      &::before {
-        background-color: #ff9800;
-      }
       
       .alert-icon {
         color: #ff9800;

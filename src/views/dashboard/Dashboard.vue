@@ -3554,11 +3554,10 @@ export default {
     }
 
     :deep(blockquote) {
-      border-left: 4px solid var(--theme-color);
       padding: 10px 15px;
       margin: 16px 0;
       background-color: rgba(var(--theme-color-rgb), 0.05);
-      border-radius: 0 6px 6px 0;
+      border-radius: 6px;
 
       p {
         margin: 8px 0;
@@ -3996,4 +3995,3 @@ a.eztheme-btn {
   color: var(--theme-color);
 }
 </style>
-

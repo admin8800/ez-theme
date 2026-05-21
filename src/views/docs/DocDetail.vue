@@ -2033,8 +2033,6 @@ onUnmounted(() => {
 
   :deep(blockquote) {
 
-    border-left: 4px solid var(--theme-color);
-
     margin-left: 0;
 
     margin-right: 0;
@@ -2049,11 +2047,11 @@ onUnmounted(() => {
 
     padding: 1.2rem 1.5rem;
 
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
 
     position: relative;
 
-    transition: background-color 0.2s ease, border-left-color 0.2s ease;
+    transition: background-color 0.2s ease;
 
     
 
