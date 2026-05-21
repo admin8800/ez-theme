@@ -141,11 +141,6 @@
       <!-- 空状态 - 增强版 -->
 
       <div v-else class="docs-empty">
-
-        <IconFileSearch :size="48" class="empty-icon" />
-
-        
-
         <!-- 根据搜索状态显示不同提示 -->
 
         <p v-if="searchQuery">{{ $t('docs.noSearchResults') }}</p>
@@ -159,9 +154,6 @@
           <p>{{ $t('docs.noDocuments') }}</p>
 
           <div class="language-hint">
-
-            <IconLanguage :size="20" class="language-icon" />
-
             <p class="hint-text">{{ $t('docs.languageHint', { currentLang: currentLanguage, alternateLang: alternateLanguage }) || `当前语言 ${currentLanguage} 暂无文档，请尝试切换到 ${alternateLanguage}` }}</p>
 
           </div>
@@ -202,11 +194,7 @@ import {
 
   IconChevronRight,
 
-  IconAlertTriangle,
-
-  IconFileSearch,
-
-  IconLanguage
+  IconAlertTriangle
 
 } from '@tabler/icons-vue';
 
@@ -1014,11 +1002,6 @@ onMounted(() => {
 
 
 .language-hint {
-
-  display: flex;
-
-  align-items: center;
-
   margin-top: 0.5rem;
 
   padding: 0.75rem 1rem;
@@ -1026,22 +1009,6 @@ onMounted(() => {
   background-color: rgba(var(--theme-color-rgb), 0.05);
 
   border-radius: 8px;
-
-  border-left: 3px solid var(--theme-color);
-
-  
-
-  .language-icon {
-
-    color: var(--theme-color);
-
-    margin-right: 0.5rem;
-
-    flex-shrink: 0;
-
-  }
-
-  
 
   .hint-text {
 

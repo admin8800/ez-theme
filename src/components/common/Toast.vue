@@ -142,8 +142,6 @@ export default {
   }
   
   &.toast-success {
-    border-left: 4px solid var(--success-color);
-    
     .toast-icon {
       color: var(--success-color);
     }
@@ -154,8 +152,6 @@ export default {
   }
   
   &.toast-error {
-    border-left: 4px solid var(--error-color);
-    
     .toast-icon {
       color: var(--error-color);
     }
@@ -166,8 +162,6 @@ export default {
   }
   
   &.toast-warning {
-    border-left: 4px solid var(--warning-color);
-    
     .toast-icon {
       color: var(--warning-color);
     }
@@ -178,8 +172,6 @@ export default {
   }
   
   &.toast-info {
-    border-left: 4px solid var(--info-color);
-    
     .toast-icon {
       color: var(--info-color);
     }

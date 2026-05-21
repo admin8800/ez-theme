@@ -587,6 +587,7 @@
             </div>
             </template>
             <div v-else class="empty-records">
+              <IconReceipt2 :size="32" class="empty-records-icon" />
               <p>{{ $t('invite.records.noRecords') }}</p>
             </div>
           </div>
@@ -627,6 +628,7 @@ import {
   IconTicket,
   IconAlertTriangle,
   IconReceipt,
+  IconReceipt2,
 } from '@tabler/icons-vue';
 
 export default {
@@ -655,6 +657,7 @@ export default {
     IconTicket,
     IconAlertTriangle,
     IconReceipt,
+    IconReceipt2,
   },
   setup() {
     const { showToast } = useToast();
@@ -2020,12 +2023,11 @@ export default {
       border: 1px dashed var(--border-color);
       font-size: 15px;
       
-      &::before {
-        content: '📋';
+      .empty-records-icon {
         display: block;
-        font-size: 32px;
-        margin-bottom: 15px;
-        opacity: 0.5;
+        margin: 0 auto 15px;
+        color: var(--theme-color);
+        opacity: 0.65;
       }
     }
   }
@@ -4040,4 +4042,3 @@ export default {
   }
 }
 </style> 
-
