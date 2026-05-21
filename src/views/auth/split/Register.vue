@@ -1123,7 +1123,6 @@ export default {
 
                 } catch (e) {
 
-                  console.log('无法重置Turnstile验证码，将重新渲染');
 
                 }
 
@@ -1755,7 +1754,6 @@ export default {
 
       if (config.is_recaptcha === 1 && captchaConfig.type === 'cloudflare' && captchaConfig.siteKey) {
 
-        console.log('注册组件激活，重新加载Cloudflare Turnstile验证组件');
 
         loadCaptchaScript().then(() => {
 
@@ -1802,7 +1800,6 @@ export default {
 
             } catch (e) {
 
-              console.log('Turnstile重置失败，将重新渲染验证码组件', e);
 
               const scripts = document.getElementsByTagName('script');
 
@@ -1862,7 +1859,6 @@ export default {
 
         } catch (e) {
 
-          console.log('Turnstile重置失败', e);
 
         }
 
@@ -2070,7 +2066,6 @@ export default {
 
         if (window.turnstile && captchaConfig.type === 'cloudflare') {
 
-          console.log('Turnstile已存在，尝试重置而不是重新加载脚本');
 
 
 
@@ -2202,7 +2197,6 @@ export default {
 
           window.captchaScriptLoaded = () => {
 
-            console.log('验证码脚本加载完成');
 
             renderFormCaptcha();
 

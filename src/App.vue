@@ -64,7 +64,7 @@
     <CustomerServiceIcon v-if="$route.path !== '/customer-service'" />
     
     <!-- Crisp嵌入组件（第二种客服系统方案） -->
-    <CrispEmbed v-if="customerServiceConfig.embedMode === 'embed'" />
+    <CrispEmbed v-if="shouldMountCrispEmbed" />
     
     <!-- 资源预加载组件 -->
     <ResourcePreloader />
@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { onMounted, onUnmounted, ref, computed, provide, watch } from 'vue';
+import { onMounted, onUnmounted, ref, computed, provide, watch, defineAsyncComponent } from 'vue';
 import { useStore } from '@/store/useLegacyStore';
 import { useTheme } from '@/composables/useTheme';
 import { useRouter, useRoute } from 'vue-router';
@@ -92,13 +92,14 @@ import UserAvatar from '@/components/common/UserAvatar.vue';
 import BackToTop from '@/components/common/BackToTop.vue';
 import CustomContextMenu from '@/components/common/CustomContextMenu.vue';
 import CustomerServiceIcon from '@/components/common/CustomerServiceIcon.vue';
-import CrispEmbed from '@/components/common/CrispEmbed.vue';
 import ResourcePreloader from '@/components/common/ResourcePreloader.vue';
 import { IconGift } from '@tabler/icons-vue';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import pageCache from '@/utils/pageCache';
 import { useToast } from '@/composables/useToast';
+
+const CrispEmbed = defineAsyncComponent(() => import('@/components/common/CrispEmbed.vue'));
 
 NProgress.configure({ 
   showSpinner: true,   
@@ -131,7 +132,11 @@ export default {
     const siteConfig = ref(SITE_CONFIG);
     const cachedRoutes = computed(() => pageCache.getCachedRoutes());
     
-    const customerServiceConfig = computed(() => CUSTOMER_SERVICE_CONFIG);
+    const shouldMountCrispEmbed = computed(() => {
+      return CUSTOMER_SERVICE_CONFIG.enabled &&
+        CUSTOMER_SERVICE_CONFIG.type === 'crisp' &&
+        CUSTOMER_SERVICE_CONFIG.embedMode === 'embed';
+    });
     
     router.beforeEach((to, from, next) => {
       if (to.meta.keepAlive && to.name) {
@@ -256,7 +261,7 @@ export default {
       siteConfig,
       PROFILE_CONFIG,
       cachedRoutes,
-      customerServiceConfig
+      shouldMountCrispEmbed
     };
   }
 };

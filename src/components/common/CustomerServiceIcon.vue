@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from '@/store/useLegacyStore';
 import { CUSTOMER_SERVICE_CONFIG } from '@/utils/baseConfig';
@@ -34,6 +34,10 @@ export default {
     onMounted(() => {
       checkIfMobile();
       window.addEventListener('resize', checkIfMobile);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', checkIfMobile);
     });
     
     const isLoggedIn = computed(() => store.getters.isLoggedIn);

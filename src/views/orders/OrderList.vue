@@ -447,8 +447,6 @@ const confirmCancelOrder = async () => {
     
     if ($toast && typeof $toast.error === 'function') {
       $toast.error(errorMessage);
-    } else {
-      alert(errorMessage);
     }
     
     closeConfirmModal();

@@ -1,4 +1,4 @@
-﻿
+
 import axios from 'axios';
 import { API_BASE_URL, getApiBaseUrl, isXiaoV2board, isXboard, CUSTOM_HEADERS_CONFIG } from '@/utils/baseConfig';
 import { readAuthData } from '@/api/client/authToken';
@@ -81,7 +81,6 @@ request.interceptors.response.use(
       const res = response.data;
       
       if (res && res.message === '未登录或登陆已过期') {
-        console.log('检测到登录已过期，执行登出操作');
         clearExpiredAuthState();
         window.location.href = '/#/login';
         return Promise.reject(new Error(res.message));

@@ -343,6 +343,12 @@ export default {
         Crisp.setColorTheme(newVal ? 'dark' : 'light');
       }
     });
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'theme' && serviceType.value === 'crisp' && crispInitialized.value) {
+        Crisp.setColorTheme(e.newValue === 'dark' ? 'dark' : 'light');
+      }
+    };
     
     const fetchUserInfo = async () => {
       if (!store.getters.isLoggedIn || serviceType.value !== 'crisp') return;
@@ -403,16 +409,11 @@ export default {
         loadOtherService();
       }
       
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'theme' && serviceType.value === 'crisp' && crispInitialized.value) {
-          const newTheme = e.newValue;
-          Crisp.setColorTheme(newTheme === 'dark' ? 'dark' : 'light');
-        }
-      });
+      window.addEventListener('storage', handleStorageChange);
     });
     
     onUnmounted(() => {
-      window.removeEventListener('storage', () => {});
+      window.removeEventListener('storage', handleStorageChange);
       
       sessionStorage.removeItem('cs_page_reloaded');
       

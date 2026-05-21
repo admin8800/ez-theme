@@ -28,6 +28,8 @@ export default {
     const currencySymbol = ref('¥'); 
     const crispInitialized = ref(window.CRISP_INITIALIZED || false);
     const isMobile = ref(false);
+    let crispObserver = null;
+    let styleTimer = null;
     
     const CONFIG = computed(() => {
       return {
@@ -94,40 +96,39 @@ export default {
     };
     
     const setCrispStyles = () => {
-      setTimeout(() => {
+      if (styleTimer) {
+        clearTimeout(styleTimer);
+      }
+
+      styleTimer = setTimeout(() => {
         try {
-          const style = document.createElement('style');
-          style.id = 'crisp-custom-styles';
-          
-          if (isMobile.value) {
-            style.textContent = `
-              
-              .crisp-client .cc-1xry,
-              .crisp-client .cc-7doi,
-              .crisp-client .cc-imbb, 
-              .crisp-client .cc-1drt,
-              .crisp-client .cc-1jrn,
-              .crisp-client [class^="cc-"] [data-visible="true"][data-is-failure="false"],
-              .crisp-client [class^="cc-"] [data-compose="true"],
-              .crisp-client [class^="cc-"] [data-maximized="false"]
-               {
-                transform: translateY(-80px) !important;
-                bottom: 80px !important;
-              }
-            `;
+          let style = document.getElementById('crisp-custom-styles');
+
+          if (!style) {
+            style = document.createElement('style');
+            style.id = 'crisp-custom-styles';
+            document.head.appendChild(style);
           }
-          
-          const oldStyle = document.getElementById('crisp-custom-styles');
-          if (oldStyle) {
-            oldStyle.remove();
-          }
-          
-          document.head.appendChild(style);
-          
+
+          style.textContent = isMobile.value ? `
+            .crisp-client .cc-1xry,
+            .crisp-client .cc-7doi,
+            .crisp-client .cc-imbb,
+            .crisp-client .cc-1drt,
+            .crisp-client .cc-1jrn,
+            .crisp-client [class^="cc-"] [data-visible="true"][data-is-failure="false"],
+            .crisp-client [class^="cc-"] [data-compose="true"],
+            .crisp-client [class^="cc-"] [data-maximized="false"] {
+              transform: translateY(-80px) !important;
+              bottom: 80px !important;
+            }
+          ` : '';
         } catch (error) {
           console.error('设置Crisp样式失败:', error);
+        } finally {
+          styleTimer = null;
         }
-      }, 1000); 
+      }, 300);
     };
     
     const fetchUserData = async () => {
@@ -340,36 +341,41 @@ export default {
       
       window.addEventListener('resize', handleResize);
       
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
+      crispObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
           if (mutation.addedNodes && mutation.addedNodes.length > 0) {
             for (let i = 0; i < mutation.addedNodes.length; i++) {
               const node = mutation.addedNodes[i];
               if (node.classList && (node.classList.contains('crisp-client') || node.querySelector('.crisp-client'))) {
                 setCrispStyles();
-                setTimeout(setCrispStyles, 500);  
-                setTimeout(setCrispStyles, 1500); 
-                break;
+                if (crispObserver) {
+                  crispObserver.disconnect();
+                  crispObserver = null;
+                }
+                return;
               }
             }
           }
-        });
+        }
       });
       
-      observer.observe(document.body, {
+      crispObserver.observe(document.body, {
         childList: true,
         subtree: true
       });
-      
-      window.crispObserver = observer;
     });
     
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize);
       
-      if (window.crispObserver) {
-        window.crispObserver.disconnect();
-        window.crispObserver = null;
+      if (crispObserver) {
+        crispObserver.disconnect();
+        crispObserver = null;
+      }
+
+      if (styleTimer) {
+        clearTimeout(styleTimer);
+        styleTimer = null;
       }
       
     });

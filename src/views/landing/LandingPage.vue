@@ -184,7 +184,6 @@ export default {
 
       
 
-      console.log(t('landing.navigatingToLogin', 'Navigating to login page'));
 
       
 

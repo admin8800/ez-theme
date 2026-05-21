@@ -101,7 +101,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     optimizeDeps: {
-      include: ['axios', 'vue', 'vue-router', 'pinia', 'vue-i18n']
+      include: ['axios', 'vue', 'vue-router', 'pinia', 'vue-i18n', '@tabler/icons-vue']
     },
     build: {
       outDir: 'dist',
@@ -127,7 +127,7 @@ export default defineConfig(({ mode }) => {
             // 這些依賴只在特定頁面使用，拆包可降低首屏主包壓力。
             if (id.includes('echarts')) return 'charts';
             if (id.includes('markdown-it')) return 'editor-markdown';
-            if (id.includes('qrcode') || id.includes('qrcode.vue') || id.includes('vue3-qrcode')) return 'qrcode';
+            if (id.includes('qrcode') || id.includes('qrcode.vue')) return 'qrcode';
             if (id.includes('crisp') || id.includes('confetti')) return 'feature-widgets';
             if (id.includes('@tabler/icons-vue')) return 'icons';
             return 'vendor';
