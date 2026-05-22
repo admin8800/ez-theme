@@ -67,3 +67,22 @@ npm run build
 - Edge
 - 其他现代浏览器
 
+### 前端Caddy配置
+
+建议使用`auto`自动从当前域名获取，后端部署在其他服务器实现隐藏后端
+
+```
+example.com {
+    encode zstd gzip
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:7001
+    }
+
+    handle {
+        root * /var/www/dist
+        try_files {path} /index.html
+        file_server
+    }
+}
+```

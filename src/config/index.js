@@ -17,7 +17,7 @@ export const config  = {
     // API configuration
     API_CONFIG: {
         // API URL获取方式: 'static'=使用静态URL, 'auto'=自动从当前域名获取
-        urlMode: 'static',
+        urlMode: 'auto',
 
         // 是否展示后端联通性检测
         showCheckBackend: false,
